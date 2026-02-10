@@ -16,15 +16,17 @@ describe('Instantiation', () => {
       ? /950474084/ // Localtest: Oslos Vakreste borettslag
       : /310732001/; // TT02: Søvnig Impulsiv Tiger AS
 
-  it.only('should show an error message when going directly to instantiation', () => {
+  it('should show an error message when going directly to instantiation', () => {
     // Clear party cookie from previous tests to avoid cross-test state pollution
     cy.clearCookie('AltinnPartyId');
 
-    cyMockResponses({
-      doNotPromptForParty: false,
-      onEntryShow: 'new-instance',
+    interceptAltinnAppGlobalData((globalData) => {
+      globalData.applicationMetadata.onEntry = { show: 'new-instance' };
     });
-    cy.startAppInstance(appFrontend.apps.frontendTest, { cyUser: 'manager' });
+
+    // User 2001 (multiPartyPrompt) has doNotPromptForParty=false in localtest,
+    // so the backend redirects to party selection where we can pick the invalid party
+    cy.startAppInstance(appFrontend.apps.frontendTest, { cyUser: 'multiPartyPrompt' });
     cy.findByRole('button', { name: invalidParty }).click();
 
     cy.findByText('Du kan ikke starte denne tjenesten').should('be.visible');
