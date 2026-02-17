@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet } from 'react-router';
 
 import { getApplicationMetadata, useIsStateless } from 'src/features/applicationMetadata';
 import { FormProvider } from 'src/features/form/FormContext';

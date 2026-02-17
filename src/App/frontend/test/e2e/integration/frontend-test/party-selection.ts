@@ -2,6 +2,7 @@ import texts from 'test/e2e/fixtures/texts.json';
 import { AppFrontend } from 'test/e2e/pageobjects/app-frontend';
 import { cyMockResponses, CyPartyMocks, removeAllButOneOrg } from 'test/e2e/pageobjects/party-mocks';
 import { cyUserCredentials } from 'test/e2e/support/auth';
+import { interceptAltinnAppGlobalData } from 'test/e2e/support/intercept-global-data';
 
 const appFrontend = new AppFrontend();
 
@@ -35,9 +36,13 @@ describe('Party selection', () => {
   it('Should skip party selection if you can only represent one person', () => {
     cyMockResponses({
       preSelectedParty: CyPartyMocks.ExamplePerson1.partyId,
-      selectedParty: CyPartyMocks.ExamplePerson1,
       allowedToInstantiate: [CyPartyMocks.ExamplePerson1],
     });
+
+    interceptAltinnAppGlobalData((globalData) => {
+      globalData.selectedParty = CyPartyMocks.ExamplePerson1;
+    });
+
     cy.intercept(
       'POST',
       `/ttd/${appFrontend.apps.frontendTest}/instances?instanceOwnerPartyId=${CyPartyMocks.ExamplePerson1.partyId}*`,
