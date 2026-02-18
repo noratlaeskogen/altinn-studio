@@ -195,6 +195,14 @@ public class HomeControllerTestPartySelection : ApiTestBase, IClassFixture<WebAp
         int userId = 1337;
         int userPartyId = 501337;
 
+        SendAsync = _ =>
+            Task.FromResult(
+                new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("""{"orgs":{}}""", System.Text.Encoding.UTF8, "application/json"),
+                }
+            );
+
         _authorizationClientMock.Setup(a => a.ValidateSelectedParty(userId, userPartyId)).ReturnsAsync(true);
         _authorizationClientMock
             .Setup(a => a.GetPartyList(userId))
@@ -227,6 +235,14 @@ public class HomeControllerTestPartySelection : ApiTestBase, IClassFixture<WebAp
         // Arrange: multiple parties but promptForParty = "never"
         int userId = 1337;
         int userPartyId = 501337;
+
+        SendAsync = _ =>
+            Task.FromResult(
+                new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("""{"orgs":{}}""", System.Text.Encoding.UTF8, "application/json"),
+                }
+            );
 
         OverrideServicesForThisTest = (services) =>
         {
@@ -276,6 +292,14 @@ public class HomeControllerTestPartySelection : ApiTestBase, IClassFixture<WebAp
         // Arrange: multiple parties, user 1337 has doNotPromptForParty=true in profile
         int userId = 1337;
         int userPartyId = 501337;
+
+        SendAsync = _ =>
+            Task.FromResult(
+                new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("""{"orgs":{}}""", System.Text.Encoding.UTF8, "application/json"),
+                }
+            );
 
         _authorizationClientMock.Setup(a => a.ValidateSelectedParty(userId, userPartyId)).ReturnsAsync(true);
         _authorizationClientMock
