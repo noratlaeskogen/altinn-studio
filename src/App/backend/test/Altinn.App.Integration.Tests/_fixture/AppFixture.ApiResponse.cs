@@ -120,6 +120,14 @@ public sealed partial class AppFixture
         }
     }
 
+    private static string NormalizeAppHost(string value)
+    {
+        // The app container may respond with either the internal Docker hostname (app:5005)
+        // or the forwarded host header (local.altinn.cloud:<port>) depending on platform
+        // and proxy configuration. Normalize to the forwarded host form for consistency.
+        return value.Replace($"{AppHostname}:{AppPort}", $"local.altinn.cloud:<localtestPort>");
+    }
+
     private sealed class StringConverter(string _appPort, string _localtestPort, Scrubbers? _scrubbers)
         : WriteOnlyJsonConverter<string>
     {
@@ -129,6 +137,7 @@ public sealed partial class AppFixture
                 value = scrubber(value);
             value = value.Replace(_appPort, "<appPort>");
             value = value.Replace(_localtestPort, "<localtestPort>");
+            value = NormalizeAppHost(value);
             writer.WriteValue(value);
         }
     }
@@ -177,6 +186,7 @@ public sealed partial class AppFixture
                                 v = scrubber(v);
                             v = v.Replace(_appPort, "<appPort>");
                             v = v.Replace(_localtestPort, "<localtestPort>");
+                            v = NormalizeAppHost(v);
                             writer.WriteValue(v);
                         }
                         writer.WriteEndArray();
@@ -197,6 +207,7 @@ public sealed partial class AppFixture
                 uri = scrubber(uri);
             uri = uri.Replace(_appPort, "<appPort>");
             uri = uri.Replace(_localtestPort, "<localtestPort>");
+            uri = NormalizeAppHost(uri);
             writer.WriteValue(uri);
         }
     }
