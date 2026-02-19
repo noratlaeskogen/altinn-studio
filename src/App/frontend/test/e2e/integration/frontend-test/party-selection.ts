@@ -127,22 +127,11 @@ describe('Party selection', () => {
     });
   });
 
-  // Party selection redirect tests using localtest user data.
-  // The backend (HomeController) handles redirect logic based on:
-  // - Number of parties the user can represent
-  // - User's doNotPromptForParty profile setting
-  // - App's promptForParty setting (tested in backend integration tests only)
+  it(`Prompts for party when doNotPromptForParty = false, on instantiation with multiple possible parties`, () => {
+    cy.intercept('**/active', []).as('noActiveInstances');
 
-  it('Prompts for party when user has multiple parties and doNotPromptForParty=false', () => {
-    // Mock active instances to prevent instance-selection redirect from accumulated test data
-    cy.intercept('**/active', []).as('activeInstances');
-    // Clear party cookie from previous tests to avoid cross-test state pollution
-    cy.clearCookie('AltinnPartyId');
-
-    // User 2001 has multiple parties and doNotPromptForParty=false
     cy.startAppInstance(appFrontend.apps.frontendTest, { cyUser: 'multiPartyPrompt2' });
 
-    // Should see party selection page with explanation
     cy.get(appFrontend.partySelection.appHeader).should('be.visible');
     cy.get('[id^="party-"]').should('be.visible');
     cy.findByRole('heading', { name: 'Hvorfor ser jeg dette?' }).should('be.visible');
@@ -155,25 +144,23 @@ describe('Party selection', () => {
       );
     cy.findByRole('heading', { name: 'Appen for test av app frontend' }).should('not.exist');
 
-    // Select a party and verify app loads
+    cy.visualTesting('reportee-selection');
+
     cy.get('[id^="party-"]').eq(0).click();
     cy.get(appFrontend.appHeader).should('be.visible');
     cy.findByRole('heading', { name: 'Appen for test av app frontend' }).should('be.visible');
     cy.get('[id^="party-"]').should('not.exist');
 
-    // Test that reloading an existing instance goes straight in without party selection
+    // Test that it goes straight in when accessing an existing instance
     cy.reloadAndWait();
+
     cy.findByRole('heading', { name: 'Appen for test av app frontend' }).should('be.visible');
     cy.get('[id^="party-"]').should('not.exist');
   });
 
   it('Does not prompt for party when user has only one party', () => {
-    // Mock active instances to prevent instance-selection redirect from accumulated test data
     cy.intercept('**/active', []).as('activeInstances');
-    // Clear party cookie from previous tests to avoid cross-test state pollution
-    cy.clearCookie('AltinnPartyId');
-
-    // User 12345 (default) has only one party
+    // User 12345 (default) has only one party - backend skips redirect regardless of doNotPromptForParty
     cy.startAppInstance(appFrontend.apps.frontendTest, { cyUser: 'default' });
 
     // Should skip party selection and go straight to app
@@ -183,14 +170,10 @@ describe('Party selection', () => {
   });
 
   it('Does not prompt for party when user has doNotPromptForParty=true even with multiple parties', () => {
-    // Use cyMockResponses to mock doNotPromptForParty=true and ensure proper authorization
-    // This is needed because user 1001 may not have proper instantiation rights in localtest
-    cyMockResponses({
-      doNotPromptForParty: true,
-      allowedToInstantiate: (parties) => [...parties, CyPartyMocks.ExamplePerson1],
-    });
-
-    cy.startAppInstance(appFrontend.apps.frontendTest, { cyUser: 'default' });
+    cy.intercept('**/active', []).as('activeInstances');
+    // User 1001 (doNotPromptParty) has doNotPromptForParty=true and 2 parties in localtest,
+    // logged in with personal party 510001 which has instantiation rights
+    cy.startAppInstance(appFrontend.apps.frontendTest, { cyUser: 'doNotPromptParty' });
 
     // Should skip party selection and go straight to app
     cy.get(appFrontend.appHeader).should('be.visible');
@@ -198,10 +181,8 @@ describe('Party selection', () => {
     cy.findByRole('heading', { name: 'Appen for test av app frontend' }).should('be.visible');
   });
 
-  // NOTE: Tests for promptForParty=always/never are not included here because they require
-  // test apps with specific applicationmetadata.json configuration. These scenarios are
-  // covered by backend integration tests in HomeControllerTest_PartySelection.cs.
   it('Should be possible to select another party if instantiation fails, and go back to party selection and instantiate again', () => {
+    cy.intercept('**/active', []).as('activeInstances');
     cy.allowFailureOnEnd();
     // Use multiPartyPrompt2 user (doNotPromptForParty=false) to trigger backend redirect to party selection
     cy.startAppInstance(appFrontend.apps.frontendTest, { cyUser: 'multiPartyPrompt2' });

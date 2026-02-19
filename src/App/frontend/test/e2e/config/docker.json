@@ -31,6 +31,10 @@
 
     "multiPartyPrompt2FullName": "Kari Nordvik",
     "multiPartyPrompt2FirstName": "Kari",
-    "multiPartyPrompt2PartyId": "2002.512002"
+    "multiPartyPrompt2PartyId": "2002.512002",
+
+    "doNotPromptPartyFullName": "Pengelens Partner",
+    "doNotPromptPartyFirstName": "Pengelens",
+    "doNotPromptPartyPartyId": "1001.510001"
   }
 }

@@ -11,7 +11,8 @@ export type CyUser =
   | 'auditor'
   | 'selfIdentified'
   | 'multiPartyPrompt'
-  | 'multiPartyPrompt2';
+  | 'multiPartyPrompt2'
+  | 'doNotPromptParty';
 
 type UserInfo = {
   firstName: string;
@@ -70,6 +71,13 @@ export const cyUserCredentials: { [K in CyUser]: UserInfo } = {
     userName: Cypress.env('multiPartyPrompt2UserName'),
     userPassword: Cypress.env('multiPartyPrompt2UserPwd'),
     localPartyId: Cypress.env('multiPartyPrompt2PartyId'),
+  },
+  doNotPromptParty: {
+    firstName: Cypress.env('doNotPromptPartyFirstName'),
+    displayName: Cypress.env('doNotPromptPartyFullName'),
+    userName: Cypress.env('doNotPromptPartyUserName'),
+    userPassword: Cypress.env('doNotPromptPartyUserPwd'),
+    localPartyId: Cypress.env('doNotPromptPartyPartyId'),
   },
 };
 
