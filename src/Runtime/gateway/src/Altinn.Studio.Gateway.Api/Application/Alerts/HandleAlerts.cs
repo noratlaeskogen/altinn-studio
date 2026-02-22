@@ -5,20 +5,23 @@ using Altinn.Studio.Gateway.Api.Clients.Designer.Contracts;
 using Altinn.Studio.Gateway.Api.Clients.MetricsClient;
 using Altinn.Studio.Gateway.Api.Settings;
 using Altinn.Studio.Gateway.Contracts.Alerts;
+using Microsoft.Extensions.Options;
 
 namespace Altinn.Studio.Gateway.Api.Application;
 
 internal static class HandleAlerts
 {
-    internal static async Task<IResult> GetAlertRulesAsync(
+    internal static async Task<IResult> GetAlertRules(
         IServiceProvider serviceProvider,
-        AlertsClientSettings alertsClientSettings,
+        IOptionsMonitor<AlertsClientSettings> alertsClientSettings,
         CancellationToken cancellationToken
     )
     {
-        IAlertsClient client = serviceProvider.GetRequiredKeyedService<IAlertsClient>(alertsClientSettings.Provider);
+        IAlertsClient client = serviceProvider.GetRequiredKeyedService<IAlertsClient>(
+            alertsClientSettings.CurrentValue.Provider
+        );
 
-        IEnumerable<GrafanaAlertRule> alertRules = await client.GetAlertRulesAsync(cancellationToken);
+        IEnumerable<GrafanaAlertRule> alertRules = await client.GetAlertRules(cancellationToken);
 
         return Results.Ok(
             alertRules?.Select(alert =>
@@ -40,10 +43,10 @@ internal static class HandleAlerts
         );
     }
 
-    internal static async Task<IResult> NotifyAlertsUpdatedAsync(
-        GatewayContext gatewayContext,
+    internal static async Task<IResult> NotifyAlertsUpdated(
+        IOptionsMonitor<GatewayContext> gatewayContext,
         IServiceProvider serviceProvider,
-        MetricsClientSettings metricsClientSettings,
+        IOptionsMonitor<MetricsClientSettings> metricsClientSettings,
         DesignerClient designerClient,
         AlertPayload alertPayload,
         CancellationToken cancellationToken,
@@ -51,8 +54,9 @@ internal static class HandleAlerts
     )
     {
         IMetricsClient metricsClient = serviceProvider.GetRequiredKeyedService<IMetricsClient>(
-            metricsClientSettings.Provider
+            metricsClientSettings.CurrentValue.Provider
         );
+        var currentGatewayContext = gatewayContext.CurrentValue;
 
         var firstAlert = alertPayload.Alerts.FirstOrDefault();
         if (firstAlert is null)
@@ -91,9 +95,9 @@ internal static class HandleAlerts
         var apps = alerts.Select(alertInstance => alertInstance.App).ToList();
 
         var logsUrl = metricsClient.GetLogsUrl(
-            gatewayContext.AzureSubscriptionId,
-            gatewayContext.ServiceOwner,
-            gatewayContext.Environment,
+            currentGatewayContext.AzureSubscriptionId,
+            currentGatewayContext.ServiceOwner,
+            currentGatewayContext.Environment,
             apps,
             ruleId,
             from,
@@ -110,7 +114,7 @@ internal static class HandleAlerts
             LogsUrl = logsUrl,
         };
 
-        await designerClient.NotifyAlertsUpdatedAsync(alert, environment, cancellationToken);
+        await designerClient.NotifyAlertsUpdated(alert, environment, cancellationToken);
 
         return Results.Ok();
     }
