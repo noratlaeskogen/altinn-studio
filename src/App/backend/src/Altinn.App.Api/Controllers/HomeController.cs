@@ -268,7 +268,6 @@ public class HomeController : Controller
 
         ApplicationMetadata application = await _appMetadata.GetApplicationMetadata();
 
-        // Skip party selection for stateless anonymous apps
         if (IsStatelessApp(application))
         {
             DataType? dataType = GetStatelessDataType(application);
@@ -290,7 +289,7 @@ public class HomeController : Controller
         }
 
         // If the selected party is not valid, redirect to party-selection/403
-        if (details.CanRepresent == false)
+        if (details.CanRepresent is null or false)
         {
             return Redirect($"/{_appId.Org}/{_appId.App}/party-selection/403");
         }
@@ -319,7 +318,6 @@ public class HomeController : Controller
             return null;
         }
 
-        // If the user profile has doNotPromptForParty set, skip party selection
         if (details.Profile.ProfileSettingPreference?.DoNotPromptForParty == true)
         {
             return null;
