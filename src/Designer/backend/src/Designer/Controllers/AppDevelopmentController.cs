@@ -369,7 +369,11 @@ namespace Altinn.Studio.Designer.Controllers
         /// <returns>A list of grouped validation navigation settings</returns>
         [HttpGet("layout-settings/validation-on-navigation")]
         [UseSystemTextJson]
-        public async Task<IActionResult> GetValidationOnNavigationLayoutSettings(string org, string app, CancellationToken cancellationToken)
+        public async Task<IActionResult> GetValidationOnNavigationLayoutSettings(
+        string org, 
+        string app, 
+        CancellationToken cancellationToken
+        )
         {
             string developer = AuthenticationHelper.GetDeveloperUserName(HttpContext);
             var editingContext = AltinnRepoEditingContext.FromOrgRepoDeveloper(org, app, developer);
