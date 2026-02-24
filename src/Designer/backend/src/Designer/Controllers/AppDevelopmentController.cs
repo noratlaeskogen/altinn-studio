@@ -380,7 +380,10 @@ namespace Altinn.Studio.Designer.Controllers
                 string developer = AuthenticationHelper.GetDeveloperUserName(HttpContext);
                 var editingContext = AltinnRepoEditingContext.FromOrgRepoDeveloper(org, app, developer);
 
-                LayoutSetsModel layoutSetsModel = await _appDevelopmentService.GetLayoutSetsExtended(editingContext, cancellationToken);
+                LayoutSetsModel layoutSetsModel = await _appDevelopmentService.GetLayoutSetsExtended(
+                    editingContext,
+                    cancellationToken
+                );
 
                 var settingsWithIds = new List<(string Id, LayoutSettings Settings)>();
                 foreach (var layoutSet in layoutSetsModel.Sets)
@@ -397,7 +400,11 @@ namespace Altinn.Studio.Designer.Controllers
                         Show = item.Settings.Pages.ValidationOnNavigation.Show,
                         Page = item.Settings.Pages.ValidationOnNavigation.Page,
                     })
-                    .GroupBy(x => new { ShowKey = x.Show != null ? string.Join(",", x.Show.OrderBy(s => s)) : "", x.Page })
+                    .GroupBy(x => new
+                    {
+                        ShowKey = x.Show != null ? string.Join(",", x.Show.OrderBy(s => s)) : "",
+                        x.Page,
+                    })
                     .Select(group => new ValidationOnNavigationDto
                     {
                         Tasks = group.Select(x => x.Id).ToList(),
