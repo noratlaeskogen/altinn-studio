@@ -4,7 +4,7 @@ import { useServicesContext } from 'app-shared/contexts/ServicesContext';
 import { QueryKey } from 'app-shared/types/QueryKey';
 import type { IValidationOnNavigationLayoutSettings } from 'app-shared/types/global';
 
-export const useValidationOnNavigationLayoutSettingsQuery = (
+export const useValidationOnNavigationGroupedSettingsQuery = (
   org: string,
   app: string,
 ): UseQueryResult<IValidationOnNavigationLayoutSettings[]> => {

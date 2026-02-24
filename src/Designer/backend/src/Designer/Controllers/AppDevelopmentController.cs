@@ -370,47 +370,52 @@ namespace Altinn.Studio.Designer.Controllers
         [HttpGet("layout-settings/validation-on-navigation")]
         [UseSystemTextJson]
         public async Task<IActionResult> GetValidationOnNavigationLayoutSettings(
-        string org, 
-        string app, 
-        CancellationToken cancellationToken
+            string org,
+            string app,
+            CancellationToken cancellationToken
         )
         {
-            string developer = AuthenticationHelper.GetDeveloperUserName(HttpContext);
-            var editingContext = AltinnRepoEditingContext.FromOrgRepoDeveloper(org, app, developer);
-
-            LayoutSetsModel layoutSetsModel = await _appDevelopmentService.GetLayoutSetsExtended(editingContext, cancellationToken);
-
-            var settingsWithIds = new List<(string Id, LayoutSettings Settings)>();
-            foreach (var layoutSet in layoutSetsModel.Sets)
+            try
             {
-                try
+                string developer = AuthenticationHelper.GetDeveloperUserName(HttpContext);
+                var editingContext = AltinnRepoEditingContext.FromOrgRepoDeveloper(org, app, developer);
+
+                LayoutSetsModel layoutSetsModel = await _appDevelopmentService.GetLayoutSetsExtended(editingContext, cancellationToken);
+
+                var settingsWithIds = new List<(string Id, LayoutSettings Settings)>();
+                foreach (var layoutSet in layoutSetsModel.Sets)
                 {
                     LayoutSettings settings = await _layoutService.GetLayoutSettings(editingContext, layoutSet.Id);
                     settingsWithIds.Add((layoutSet.Id, settings));
                 }
-                catch (FileNotFoundException)
-                {
-                    // Skip layout sets without settings.json
-                }
+
+                var result = settingsWithIds
+                    .Where(item => item.Settings?.Pages?.ValidationOnNavigation != null)
+                    .Select(item => new
+                    {
+                        item.Id,
+                        Show = item.Settings.Pages.ValidationOnNavigation.Show,
+                        Page = item.Settings.Pages.ValidationOnNavigation.Page,
+                    })
+                    .GroupBy(x => new { ShowKey = x.Show != null ? string.Join(",", x.Show.OrderBy(s => s)) : "", x.Page })
+                    .Select(group => new ValidationOnNavigationDto
+                    {
+                        Tasks = group.Select(x => x.Id).ToList(),
+                        Show = group.First().Show,
+                        Page = group.First().Page,
+                    })
+                    .ToList();
+
+                return Ok(result);
             }
-
-            var result = settingsWithIds
-                .Select(item => new
-                {
-                    item.Id,
-                    Show = item.Settings?.Pages?.ValidationOnNavigation?.Show,
-                    Page = item.Settings?.Pages?.ValidationOnNavigation?.Page,
-                })
-                .GroupBy(x => new { ShowKey = x.Show != null ? string.Join(",", x.Show.OrderBy(s => s)) : "", x.Page })
-                .Select(group => new ValidationOnNavigationDto
-                {
-                    Tasks = group.Select(x => x.Id).ToList(),
-                    Show = group.First().Show,
-                    Page = group.First().Page,
-                })
-                .ToList();
-
-            return Ok(result);
+            catch (FileNotFoundException exception)
+            {
+                return NotFound(exception.Message);
+            }
+            catch (BadHttpRequestException exception)
+            {
+                return BadRequest(exception);
+            }
         }
 
         /// <summary>
