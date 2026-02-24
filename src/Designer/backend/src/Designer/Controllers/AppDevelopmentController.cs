@@ -388,7 +388,11 @@ namespace Altinn.Studio.Designer.Controllers
                 var settingsWithIds = new List<(string Id, LayoutSettings Settings)>();
                 foreach (var layoutSet in layoutSetsModel.Sets)
                 {
-                    LayoutSettings settings = await _layoutService.GetLayoutSettings(editingContext, layoutSet.Id);
+                    LayoutSettings settings = await _layoutService.GetLayoutSettings(
+                        editingContext,
+                        layoutSet.Id,
+                        cancellationToken
+                    );
                     settingsWithIds.Add((layoutSet.Id, settings));
                 }
 
