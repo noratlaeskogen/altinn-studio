@@ -13,15 +13,15 @@ _initialized = False
 def init_langfuse():
     """Initialize Langfuse with proper configuration"""
     global _client, _initialized
-    
+
     if _initialized:
         log.debug("Langfuse already initialized")
         return _client
-    
+
     if not config.LANGFUSE_ENABLED:
         log.info("Langfuse tracking is disabled")
         return None
-    
+
     try:
         # Initialize Langfuse client (without 'enabled' parameter - control via LANGFUSE_ENABLED env var)
         _client = Langfuse(
@@ -31,12 +31,12 @@ def init_langfuse():
             release=config.LANGFUSE_RELEASE,
             environment=config.LANGFUSE_ENVIRONMENT,
         )
-        
+
         _initialized = True
         log.info(f"Langfuse initialized successfully (host: {config.LANGFUSE_HOST}, release: {config.LANGFUSE_RELEASE}, env: {config.LANGFUSE_ENVIRONMENT})")
-        
+
         return _client
-        
+
     except Exception as e:
         log.error(f"Failed to initialize Langfuse: {e}")
         log.warning("Langfuse tracking will be disabled")
@@ -51,10 +51,10 @@ def is_langfuse_enabled() -> bool:
 def get_langfuse_client() -> Langfuse:
     """Get or initialize Langfuse client"""
     global _client
-    
+
     if not _initialized:
         init_langfuse()
-    
+
     return _client
 
 
@@ -67,6 +67,47 @@ def flush_langfuse():
         except Exception as e:
             log.debug(f"Failed to flush Langfuse: {e}")
 
+def score_validation(
+    name: str,
+    passed: bool,
+    trace_id: str,
+    observation_id: str | None = None,
+    config_id: str | None = None,
+    comment: str | None = None,
+) -> None:
+    """Write a boolean validation result as a Langfuse score (1 = pass, 0 = fail).
+
+    Args:
+        name: Score name matching the span (e.g. 'layout_schema_validation').
+        passed: True if validation passed, False if it failed.
+        trace_id: Langfuse trace ID to attach the score to.
+        observation_id: Optional span/observation ID to link the score to.
+        config_id: Optional Langfuse score config UUID
+                   (from LANGFUSE_SCORE_CONFIG_LAYOUT_SCHEMA etc.).
+        comment: Optional detail — error messages on failure, 'Passed' on success.
+    """
+    if not is_langfuse_enabled():
+        return
+    client = get_langfuse_client()
+    if not client:
+        return
+    try:
+        kwargs: dict = {
+            "trace_id": trace_id,
+            "name": name,
+            "value": 1.0 if passed else 0.0,
+            "data_type": "BOOLEAN",
+        }
+        if config_id:
+            kwargs["config_id"] = config_id
+        if observation_id:
+            kwargs["observation_id"] = observation_id
+        if comment:
+            kwargs["comment"] = comment
+        client.create_score(**kwargs)
+        log.debug("Langfuse score '%s' = %s written to trace %s", name, passed, trace_id)
+    except Exception as e:
+        log.debug("Failed to create Langfuse score '%s': %s", name, e)
 
 # For backward compatibility with code that expects these functions
 # These are no-ops now since Langfuse handles things differently
