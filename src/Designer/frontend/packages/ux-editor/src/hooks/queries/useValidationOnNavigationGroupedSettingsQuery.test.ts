@@ -63,7 +63,7 @@ describe('useValidationOnNavigationGroupedSettingsQuery', () => {
       queryClient,
       queries: { getValidationOnNavigationLayoutSettings: getFailing },
     });
-    await waitFor(() => expect(view.current.isError).toBe(true));
+    expect(view.current.isError).toBe(true);
   });
 });
 
@@ -80,6 +80,8 @@ const render = async ({ queries, queryClient }: RenderProps = {}) => {
       queries: { getValidationOnNavigationLayoutSettings, ...queries },
     },
   );
-  await waitFor(() => result.current.isSuccess || result.current.isError);
+  await waitFor(() => {
+    expect(result.current.isSuccess || result.current.isError).toBe(true);
+  });
   return result;
 };
