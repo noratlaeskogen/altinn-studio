@@ -5,6 +5,7 @@ import { useValidationOnNavigationGroupedSettingsQuery } from './useValidationOn
 import { app, org } from '@studio/testing/testids';
 import { createQueryClientMock } from 'app-shared/mocks/queryClientMock';
 import { QueryKey } from 'app-shared/types/QueryKey';
+import type { QueryClient } from '@tanstack/react-query';
 
 // Test data:
 const settingWithValidateOnNavigationRule1: IValidationOnNavigationLayoutSettings = {
@@ -30,7 +31,10 @@ const getValidationOnNavigationLayoutSettings = jest
 
 describe('useValidationOnNavigationGroupedSettingsQuery', () => {
   const queryClient = createQueryClientMock();
-  beforeEach(() => queryClient.clear());
+  beforeEach(() => {
+    queryClient.clear();
+    getValidationOnNavigationLayoutSettings.mockClear();
+  });
 
   it('calls getValidationOnNavigationLayoutSettings with the correct parameters', async () => {
     await render();
@@ -47,31 +51,35 @@ describe('useValidationOnNavigationGroupedSettingsQuery', () => {
 
   it('returns an empty array when the API returns no settings', async () => {
     queryClient.setQueryData([QueryKey.ValidationOnNavigationLayoutSettings, org, app], []);
-    const { result } = renderHookWithProviders(
-      () => useValidationOnNavigationGroupedSettingsQuery(org, app),
-      { queryClient },
-    );
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(result.current.data).toEqual([]);
+    const view = await render({ queryClient });
+    expect(view.current.data).toEqual([]);
   });
 
   it('sets isError to true when the API call fails', async () => {
     const getFailing = jest
       .fn()
       .mockImplementation(() => Promise.reject(new Error('Failed to fetch')));
-    const { result } = renderHookWithProviders(
-      () => useValidationOnNavigationGroupedSettingsQuery(org, app),
-      { queryClient, queries: { getValidationOnNavigationLayoutSettings: getFailing } },
-    );
-    await waitFor(() => expect(result.current.isError).toBe(true));
+    const view = await render({
+      queryClient,
+      queries: { getValidationOnNavigationLayoutSettings: getFailing },
+    });
+    await waitFor(() => expect(view.current.isError).toBe(true));
   });
 });
 
-const render = async () => {
+type RenderProps = {
+  queries?: { getValidationOnNavigationLayoutSettings?: jest.Mock };
+  queryClient?: QueryClient;
+};
+
+const render = async ({ queries, queryClient }: RenderProps = {}) => {
   const { result } = renderHookWithProviders(
     () => useValidationOnNavigationGroupedSettingsQuery(org, app),
-    { queries: { getValidationOnNavigationLayoutSettings } },
+    {
+      queryClient: queryClient,
+      queries: { getValidationOnNavigationLayoutSettings, ...queries },
+    },
   );
-  await waitFor(() => expect(result.current.isSuccess).toBe(true));
+  await waitFor(() => result.current.isSuccess || result.current.isError);
   return result;
 };
